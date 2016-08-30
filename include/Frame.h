@@ -187,6 +187,8 @@ public:
 
     static bool mbInitialComputations;
 
+    // TODO: confirm
+    cv::Mat img;
 
 private:
 

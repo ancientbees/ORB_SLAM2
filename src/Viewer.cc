@@ -71,6 +71,7 @@ void Viewer::Run()
     pangolin::Var<bool> menuShowGraph("menu.Show Graph",true,true);
     pangolin::Var<bool> menuLocalizationMode("menu.Localization Mode",false,true);
     pangolin::Var<bool> menuReset("menu.Reset",false,false);
+    pangolin::Var<bool> menuSave("menu.Save",false,false);
 
     // Define Camera Render Object (for view / scene browsing)
     pangolin::OpenGlRenderState s_cam(
@@ -152,6 +153,13 @@ void Viewer::Run()
             menuReset = false;
         }
 
+        if(menuSave)
+        {
+            cout << "Yay" << endl;
+            SaveMapPoints();
+            menuSave = false;
+        }
+
         if(Stop())
         {
             while(isStopped())
@@ -165,6 +173,32 @@ void Viewer::Run()
     }
 
     SetFinish();
+}
+
+void Viewer::SaveMapPoints()
+{
+    ofstream myfile;
+    myfile.open("map.ply");
+
+    const vector<MapPoint*> &points = mpMapDrawer->mpMap->GetAllMapPoints();
+
+    // Write header
+    myfile << "ply" << endl
+              << "format ascii 1.0" << endl
+                 << "element vertex " << points.size() << endl
+                    << "property float32 x" << endl
+                        << "property float32 y" << endl
+                           << "property float32 z" << endl
+                              << "end_header" << endl;
+
+    for(uint i=0; i < points.size(); i++)
+    {
+        cv::Mat pos = points[i]->GetWorldPos();
+        myfile << pos.at<float>(0) << " " << pos.at<float>(1) << " " << pos.at<float>(2) << endl;
+    }
+
+    cout << "Done!" << endl;
+    myfile.close();
 }
 
 void Viewer::RequestFinish()

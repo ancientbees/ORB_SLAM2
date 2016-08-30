@@ -42,6 +42,7 @@ LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, 
 {
     mnCovisibilityConsistencyTh = 3;
     mpMatchedKF = NULL;
+    nClosures = 0;
 }
 
 void LoopClosing::SetTracker(Tracking *pTracker)
@@ -53,7 +54,6 @@ void LoopClosing::SetLocalMapper(LocalMapping *pLocalMapper)
 {
     mpLocalMapper=pLocalMapper;
 }
-
 
 void LoopClosing::Run()
 {
@@ -67,13 +67,15 @@ void LoopClosing::Run()
             // Detect loop candidates and check covisibility consistency
             if(DetectLoop())
             {
-               // Compute similarity transformation [sR|t]
-               // In the stereo/RGBD case s=1
-               if(ComputeSim3())
-               {
+                // Compute similarity transformation [sR|t]
+                // In the stereo/RGBD case s=1
+                if(ComputeSim3())
+                {
                    // Perform loop fusion and pose graph optimization
-                   CorrectLoop();
-               }
+                    CorrectLoop();
+                    nClosures++;
+                    cout << nClosures << endl;
+                }
             }
         }       
 
@@ -345,8 +347,11 @@ bool LoopClosing::ComputeSim3()
     if(!bMatch)
     {
         for(int i=0; i<nInitialCandidates; i++)
-             mvpEnoughConsistentCandidates[i]->SetErase();
+        {
+            mvpEnoughConsistentCandidates[i]->SetErase();
+        }
         mpCurrentKF->SetErase();
+        //cout << "Not enough inliers for loop closure" << endl;
         return false;
     }
 
@@ -395,6 +400,7 @@ bool LoopClosing::ComputeSim3()
         for(int i=0; i<nInitialCandidates; i++)
             mvpEnoughConsistentCandidates[i]->SetErase();
         mpCurrentKF->SetErase();
+        cout << "Not enough matches for loop closure" << endl;
         return false;
     }
 
@@ -436,7 +442,6 @@ void LoopClosing::CorrectLoop()
     KeyFrameAndPose CorrectedSim3, NonCorrectedSim3;
     CorrectedSim3[mpCurrentKF]=mg2oScw;
     cv::Mat Twc = mpCurrentKF->GetPoseInverse();
-
 
     {
         // Get Map Mutex

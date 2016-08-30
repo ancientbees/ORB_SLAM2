@@ -58,6 +58,8 @@ public:
 
 private:
 
+    void SaveMapPoints();
+
     bool Stop();
 
     System* mpSystem;
